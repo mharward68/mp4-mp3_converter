@@ -1,0 +1,19 @@
+{
+  "name": "mp4-mp3-converter",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "MP4 to MP3 Converter by Your AV Department. Static site in public/, usage counter in netlify/functions/.",
+  "scripts": {
+    "test": "node --test tests/queue.test.mjs",
+    "test:e2e": "node tests/e2e.mjs",
+    "serve": "node tests/serve.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "11.1.4",
+    "@netlify/functions": "6.0.2"
+  },
+  "devDependencies": {
+    "playwright-core": "1.64.0"
+  }
+}

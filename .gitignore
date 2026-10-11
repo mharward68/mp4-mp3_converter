@@ -1,0 +1,4 @@
+node_modules/
+.netlify/
+*.mp4
+*.mp3
