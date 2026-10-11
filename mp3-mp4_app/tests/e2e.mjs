@@ -18,14 +18,14 @@ const problems = [];
 page.on('console', (m) => { if (m.type() === 'error') problems.push('console: ' + m.text()); });
 page.on('pageerror', (e) => problems.push('pageerror: ' + e.message));
 const external = [];
-page.on('request', (r) => { if (!r.url().startsWith('http://localhost:8090/') && !r.url().startsWith('blob:')) external.push(r.url()); });
+page.on('request', (r) => { if (page.url().includes('/app/') && !r.url().startsWith('http://localhost:8090/') && !r.url().startsWith('blob:')) external.push(r.url()); });
 
 let failed = 0;
 const check = (name, ok, detail = '') => { console.log(`${ok ? 'PASS' : 'FAIL'}  ${name}${detail ? '  (' + detail + ')' : ''}`); if (!ok) failed++; };
 const state = () => page.evaluate(() => window.__state());
 const waitIdle = (ms) => page.waitForFunction(() => window.__state().every((i) => i.status !== 'waiting' && i.status !== 'converting'), null, { timeout: ms, polling: 500 });
 
-await page.goto('http://localhost:8090/convert.html');
+await page.goto('http://localhost:8090/mp3-converter/app/');
 check('page loads with drop zone enabled', await page.locator('#dropzone').isEnabled());
 check('empty note shows', await page.locator('#empty-note').isVisible());
 
@@ -94,18 +94,21 @@ if (existsSync(big)) {
   console.log('SKIP  large-file checks (no big.mp4)');
 }
 
-check('no requests left the page origin', external.length === 0, external.join(', '));
+check('converter made no requests outside its own address', external.length === 0, external.join(', '));
 check('conversions were counted, and only an event name was sent', counted.filter((e) => e === 'convert').length >= 2, counted.join(','));
 check('no console or page errors', problems.length === 0, problems.join(' | '));
 
 // Landing page and offline.
-await page.goto('http://localhost:8090/');
-check('landing page renders', await page.getByRole('heading', { level: 1 }).isVisible());
+await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
+await page.goto('http://localhost:8090/mp3-converter/');
+check('landing page renders', await page.getByRole('heading', { level: 1, name: 'MP4 to MP3 Converter' }).isVisible());
+check('landing page links to the converter', await page.locator('#mp3Open').isVisible());
+check('visit was counted', counted.includes('visit'), counted.join(','));
 await page.evaluate(() => navigator.serviceWorker.ready);
 await page.waitForFunction(() => caches.keys().then((k) => k.length > 0));
 await page.waitForTimeout(1500);
 await context.setOffline(true);
-await page.goto('http://localhost:8090/convert.html');
+await page.goto('http://localhost:8090/mp3-converter/app/');
 check('converter opens offline', await page.locator('#dropzone').isVisible());
 await page.setInputFiles('#picker', [path.join(media, 'small.mp4')]);
 await waitIdle(120000);

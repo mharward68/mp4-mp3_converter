@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   STATUS, rejectReason, mp3Name, uniqueName, formatBytes, formatRemaining, makeItem, summarize, nextWaiting, MAX_BYTES,
-} from '../public/js/queue.js';
+} from '../public/app/js/queue.js';
 
 const f = (name, size = 1000, type = '') => ({ name, size, type });
 
