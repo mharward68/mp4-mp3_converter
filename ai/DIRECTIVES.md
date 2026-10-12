@@ -20,8 +20,8 @@ Edited by Michael, deliberately.
 4. **One bad file never stops a batch.** Load-bearing today.
 5. **Source files are never modified or deleted.** Load-bearing today.
 6. **Brand:** Your AV Department only. No Onyva elements. No em dashes in copy.
-7. **Secrets never in the repo.** MP3_STATS_KEY lives in Netlify only.
-8. **The strict content security policy stays on /mp3-converter/app/* and is never widened** to the landing page or the rest of the site, which rely on inline code.
+7. **Secrets never in the repo.** JUST_THE_AUDIO_STATS_KEY lives in Netlify only.
+8. **The strict content security policy stays on /just-the-audio/app/* and is never widened** to the landing page or the rest of the site, which rely on inline code.
 
 ## 2. Ladder
 Stability > User experience > Efficiency > Scalability > Simplicity.

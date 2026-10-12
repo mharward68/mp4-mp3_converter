@@ -13,7 +13,7 @@ summarize(items) -> { total, done, failed, waiting, active, busy, fraction, rema
 // public/app/js/engine.js
 convert(file, { onProgress(fraction) }) -> { promise: Promise<Blob>, cancel() }   // rejects with ConvertError { message, code }
 // counter
-POST /api/mp3-converter/count?e=visit|install|convert -> 204   (path changed in 1.8, a plan revision Michael asked for)
+POST /api/just-the-audio/count?e=visit|install|convert -> 204   (path changed in 1.8, a plan revision Michael asked for)
 ```
 
 | # | Session | Compartment | Size | Est. | Result |

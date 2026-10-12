@@ -6,12 +6,17 @@ import {
 
 const f = (name, size = 1000, type = '') => ({ name, size, type });
 
-test('accepts mp4, rejects everything else in plain English', () => {
+test('accepts mp4, mov and m4a, rejects everything else in plain English', () => {
+  assert.equal(rejectReason(f('audio_only.m4a')), null);
+  assert.equal(rejectReason(f('memo', 10, 'audio/x-m4a')), null);
+  assert.equal(rejectReason(f('iPhone Clip.MOV')), null);
+  assert.equal(rejectReason(f('clip', 10, 'video/quicktime')), null);
   assert.equal(rejectReason(f('Keynote.mp4')), null);
   assert.equal(rejectReason(f('KEYNOTE.MP4')), null);
   assert.equal(rejectReason(f('clip', 10, 'video/mp4')), null);
-  assert.match(rejectReason(f('Walkthrough.mov')), /Not an MP4/);
-  assert.match(rejectReason(f('notes.mp4.txt')), /Not an MP4/);
+  assert.match(rejectReason(f('Walkthrough.avi')), /Not an MP4, MOV or M4A/);
+  assert.match(rejectReason(f('notes.mp4.txt')), /Not an MP4, MOV or M4A/);
+  assert.match(rejectReason(f('song.wav')), /Not an MP4, MOV or M4A/);
   assert.match(rejectReason(f('empty.mp4', 0)), /empty/);
   assert.match(rejectReason(f('huge.mp4', MAX_BYTES + 1)), /over 2 GB/);
 });
@@ -21,6 +26,8 @@ test('mp3 names keep the original name and stay legal on Windows', () => {
   assert.equal(mp3Name('a.b.c.MP4'), 'a.b.c.mp3');
   assert.equal(mp3Name('Q&A: Day 2?.mp4'), 'Q&A_ Day 2_.mp3');
   assert.equal(mp3Name('.mp4'), 'audio.mp3');
+  assert.equal(mp3Name('Walkthrough.MOV'), 'Walkthrough.mp3');
+  assert.equal(mp3Name('audio_only.m4a'), 'audio_only.mp3');
 });
 
 test('duplicate names get a number, not an overwrite', () => {
@@ -38,7 +45,7 @@ test('sizes and time read naturally', () => {
 });
 
 test('summary counts the batch and ignores skipped files', () => {
-  const items = [f('a.mp4', 100), f('b.mp4', 100), f('c.mov', 100), f('d.mp4', 200)].map(makeItem);
+  const items = [f('a.mp4', 100), f('b.mov', 100), f('c.avi', 100), f('d.mp4', 200)].map(makeItem);
   assert.equal(items[2].status, STATUS.SKIPPED);
   items[0].status = STATUS.DONE;
   items[1].status = STATUS.CONVERTING; items[1].progress = 0.5;

@@ -1,9 +1,9 @@
 {
-  "name": "mp4-mp3-converter",
-  "version": "1.1.0",
+  "name": "just-the-audio",
+  "version": "2.1.0",
   "private": true,
   "type": "module",
-  "description": "MP4 to MP3 Converter by Your AV Department. Static site in public/, usage counter in netlify/functions/.",
+  "description": "Just the Audio by Your AV Department. public/ mirrors the website folder just-the-audio/; usage counter in site-functions/.",
   "scripts": {
     "test": "node --test tests/queue.test.mjs",
     "test:e2e": "node tests/e2e.mjs",

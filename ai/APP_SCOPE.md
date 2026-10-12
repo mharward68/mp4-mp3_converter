@@ -1,8 +1,8 @@
-# MP4 to MP3 Converter Scope
+# Just the Audio Scope (formerly "MP4 to MP3 Converter")
 Status: APPROVED 2026-10-11 (version 2, public promo tool). Phase 1 built the same day.
 
 ## 1. Summary
-A free, installable web app from Your AV Department that converts MP4 recordings to MP3. The user drops one or many MP4 files and each becomes its own MP3. All conversion happens on the user's computer: no upload, no account. It is offered to meeting planners as a promo item from a page at youravdept.com/mp3-converter.
+A free, installable web app from Your AV Department, named Just the Audio, that converts MP4, MOV and M4A recordings to MP3. The user drops one or many MP4 files and each becomes its own MP3. All conversion happens on the user's computer: no upload, no account. It is offered to meeting planners as a promo item from a page at youravdept.com/just-the-audio.
 
 ## 2. Users and roles
 - The public (meeting planners first). No sign-in, no roles.
@@ -63,8 +63,9 @@ A free, installable web app from Your AV Department that converts MP4 recordings
 Server-side conversion, accounts, history, files over about 2 GB, video output, copy-protected files.
 
 ## 11. Open items
-- Proxy rule on the main youravdept.com site so the app appears at /mp3-converter (needs that site's repo).
-- GitHub push (Claude's GitHub access to this repo is not connected).
+- Michael deploys the website (preview, then live) and deletes the leftover `mp3-converter` files there first.
+- GitHub push of both repos.
+- Trademark and prior-use check on the name "Just the Audio".
 
 ## 12. Success criteria
 Met on 2026-10-11. See `ai/CONTEXT.md` for the pasted test output.

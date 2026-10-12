@@ -1,6 +1,6 @@
 // End-to-end check in a real browser. Usage:
 //   node tests/e2e.mjs <dir with test media> [path to chrome]
-// Expects in the media dir: small.mp4 (has audio), noaudio.mp4, and optionally big.mp4 (1 GB+).
+// Expects in the media dir: small.mp4 (has audio), noaudio.mp4, and optionally clip.mov, memo.m4a and big.mp4 (1 GB+).
 import { chromium } from 'playwright-core';
 import { execFileSync } from 'node:child_process';
 import { existsSync, statSync, writeFileSync, mkdtempSync } from 'node:fs';
@@ -25,12 +25,12 @@ const check = (name, ok, detail = '') => { console.log(`${ok ? 'PASS' : 'FAIL'} 
 const state = () => page.evaluate(() => window.__state());
 const waitIdle = (ms) => page.waitForFunction(() => window.__state().every((i) => i.status !== 'waiting' && i.status !== 'converting'), null, { timeout: ms, polling: 500 });
 
-await page.goto('http://localhost:8090/mp3-converter/app/');
+await page.goto('http://localhost:8090/just-the-audio/app/');
 check('page loads with drop zone enabled', await page.locator('#dropzone').isEnabled());
 check('empty note shows', await page.locator('#empty-note').isVisible());
 
 const tmp = mkdtempSync(path.join(os.tmpdir(), 'e2e-'));
-const notMp4 = path.join(tmp, 'Venue Walkthrough.mov'); writeFileSync(notMp4, 'x');
+const notMp4 = path.join(tmp, 'Venue Walkthrough.avi'); writeFileSync(notMp4, 'x');
 const broken = path.join(tmp, 'broken.mp4'); writeFileSync(broken, Buffer.alloc(5000, 7));
 
 // Mixed batch: good file, wrong type, no audio, damaged file. One bad file must not stop the rest.
@@ -39,7 +39,7 @@ await waitIdle(120000);
 let s = await state();
 const by = (n) => s.find((i) => i.name === n);
 check('good file converts', by('small.mp4').status === 'done' && by('small.mp4').outName === 'small.mp3', JSON.stringify(by('small.mp4').outSize));
-check('non-MP4 is skipped with a reason', by('Venue Walkthrough.mov').status === 'skipped' && /Not an MP4/.test(by('Venue Walkthrough.mov').error));
+check('unsupported type is skipped with a reason', by('Venue Walkthrough.avi').status === 'skipped' && /Not an MP4, MOV or M4A/.test(by('Venue Walkthrough.avi').error));
 check('no-audio file fails with a reason', by('noaudio.mp4').status === 'failed' && /no audio track/.test(by('noaudio.mp4').error), by('noaudio.mp4').error);
 check('damaged file fails with a reason', by('broken.mp4').status === 'failed', by('broken.mp4').error);
 check('summary line', (await page.locator('#summary').textContent()).startsWith('1 of 3 converted, 2 failed'), await page.locator('#summary').textContent());
@@ -52,6 +52,36 @@ const a = probe.streams[0];
 check('download is a real MP3', a.codec_name === 'mp3', `${a.codec_name} ${a.channels}ch ${a.sample_rate}Hz`);
 check('bitrate is 192 kbps', Math.abs(Number(a.bit_rate) - 192000) < 2000, a.bit_rate);
 check('duration matches the source (20 s)', Math.abs(Number(probe.format.duration) - 20) < 0.3, probe.format.duration);
+
+// MOV files convert too.
+if (existsSync(path.join(media, 'clip.mov'))) {
+  await page.setInputFiles('#picker', [path.join(media, 'clip.mov')]);
+  await waitIdle(120000);
+  s = await state();
+  const mov = s.find((i) => i.name === 'clip.mov');
+  check('MOV file converts', mov.status === 'done' && mov.outName === 'clip.mp3', `${mov.status} ${mov.error ?? ''} ${mov.outSize}`);
+  if (mov.status === 'done') {
+  const [dm] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download clip.mp3' }).click()]);
+  const om = path.join(tmp, 'clip.mp3'); await dm.saveAs(om);
+  const pm = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_format', '-show_streams', '-of', 'json', om]).toString());
+  check('MOV output is a real MP3 of the right length (12 s)', pm.streams[0].codec_name === 'mp3' && Math.abs(Number(pm.format.duration) - 12) < 0.3, `${pm.streams[0].codec_name} ${pm.format.duration}`);
+  }
+}
+
+// M4A (audio only, no video track) converts too.
+if (existsSync(path.join(media, 'memo.m4a'))) {
+  await page.setInputFiles('#picker', [path.join(media, 'memo.m4a')]);
+  await waitIdle(120000);
+  s = await state();
+  const m4a = s.find((i) => i.name === 'memo.m4a');
+  check('M4A file converts', m4a.status === 'done' && m4a.outName === 'memo.mp3', `${m4a.status} ${m4a.error ?? ''} ${m4a.outSize}`);
+  if (m4a.status === 'done') {
+    const [da] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'Download memo.mp3' }).click()]);
+    const oa = path.join(tmp, 'memo.mp3'); await da.saveAs(oa);
+    const pa = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_format', '-show_streams', '-of', 'json', oa]).toString());
+    check('M4A output is a real MP3 of the right length (15 s)', pa.streams[0].codec_name === 'mp3' && Math.abs(Number(pa.format.duration) - 15) < 0.3, `${pa.streams[0].codec_name} ${pa.format.duration}`);
+  }
+}
 
 // Same name twice must not overwrite.
 await page.setInputFiles('#picker', [path.join(media, 'small.mp4')]);
@@ -100,15 +130,16 @@ check('no console or page errors', problems.length === 0, problems.join(' | '));
 
 // Landing page and offline.
 await page.route(/fonts\.(googleapis|gstatic)\.com/, (r) => r.fulfill({ status: 200, contentType: 'text/css', body: '' }));
-await page.goto('http://localhost:8090/mp3-converter/');
-check('landing page renders', await page.getByRole('heading', { level: 1, name: 'MP4 to MP3 Converter' }).isVisible());
-check('landing page links to the converter', await page.locator('#mp3Open').isVisible());
+await page.goto('http://localhost:8090/just-the-audio/');
+check('landing page renders', await page.getByRole('heading', { level: 1, name: 'Just the Audio' }).isVisible());
+check('landing page explains all three formats', (await page.locator('#formats .lever-card').count()) === 4);
+check('landing page links to the converter', await page.locator('#jtaOpen').isVisible());
 check('visit was counted', counted.includes('visit'), counted.join(','));
 await page.evaluate(() => navigator.serviceWorker.ready);
 await page.waitForFunction(() => caches.keys().then((k) => k.length > 0));
 await page.waitForTimeout(1500);
 await context.setOffline(true);
-await page.goto('http://localhost:8090/mp3-converter/app/');
+await page.goto('http://localhost:8090/just-the-audio/app/');
 check('converter opens offline', await page.locator('#dropzone').isVisible());
 await page.setInputFiles('#picker', [path.join(media, 'small.mp4')]);
 await waitIdle(120000);
